@@ -107,6 +107,7 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 		File temp = null;
 		try {
 			temp = File.createTempFile("vps", ".txt");
+			log.info("Create file at {}", temp.getAbsolutePath());
 		} catch (IOException e) {
 			log.error("Failed to create temp file", e);
 		}
@@ -117,6 +118,7 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 		Path outputFilePath = Paths.get(filePath);
 		try {
 			Files.createFile(outputFilePath);
+			log.info("Create file at {}", outputFilePath.toString());
 		} catch (IOException e) {
 			log.error("Failed to create file {}", filePath, e);
 			return null;
