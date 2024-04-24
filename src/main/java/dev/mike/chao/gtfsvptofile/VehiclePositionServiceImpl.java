@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -41,7 +43,7 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 	
 	@PostConstruct
 	public void init() {
-		if (interestedRouteIds == "ALL") {
+		if (interestedRouteIds.equals(GtfsVpToFileConfig.ALL)) {
 			isAllRoutes = true;
 		} else {
 			routeIds.addAll(Arrays.asList(interestedRouteIds.split(",")));
@@ -49,7 +51,7 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 	}
 
 	@Override
-	@Scheduled(fixedDelay = 5, initialDelay = 0, timeUnit = TimeUnit.SECONDS)
+	@Scheduled(fixedDelay = 10, initialDelay = 0, timeUnit = TimeUnit.SECONDS)
 	public void update() {
 		log.info("Updating Vehicle Positions");
 		Predicate<VehiclePosition> hasPosition = vp -> {
@@ -63,11 +65,12 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 		};
 		FeedMessage feedMessage = createFeedMessage();
 		if (feedMessage != null) {
-			feedMessage.getEntityList().stream()
+			List<VehiclePosition> list = feedMessage.getEntityList().stream()
         		.filter(FeedEntity::hasVehicle)
         		.map(FeedEntity::getVehicle)
         		.filter(hasPosition.and(hasTrip).and(filterByRouteId))
-        		.forEach(vpHandler::handle);
+        		.collect(Collectors.toList());
+			vpHandler.handle(list);
 		}
 		log.info("Finished updating vehicle positions");
 	}

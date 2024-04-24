@@ -7,13 +7,19 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
 @EnableScheduling
-public class VehiclePositionServiceConfig {
+public class GtfsVpToFileConfig {
+	
+	public static final String TEMP = "TEMP";
+	public static final String ALL = "ALL";
 
 	@Value("${gtfs.vp.feed.url}")
 	private String gtfsVehiclePositionURL;
 	
-	@Value("${gtfs.vp.route.ids}")
+	@Value("${gtfs.vp.route.ids:" + ALL + "}")
 	private String gtfsRouteIds;
+	
+	@Value("${gtfs.vp.file:" + TEMP + "}")
+	private String filePath;
 	
 	@Bean
 	public VehiclePositionService vehiclePositionService() {
@@ -22,6 +28,6 @@ public class VehiclePositionServiceConfig {
 	
 	@Bean
 	public VehiclePositionHandler handler() {
-		return new VehiclePositionToFileHandler();
+		return new VehiclePositionToFileHandler(filePath);
 	}
 }
