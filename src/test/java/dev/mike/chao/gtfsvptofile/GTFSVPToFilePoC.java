@@ -85,7 +85,7 @@ public class GTFSVPToFilePoC {
 		// reading
 		List<VehiclePosition> readIn = new ArrayList<>();
 		try (FileInputStream input = new FileInputStream(tempFile)) {
-			while (true) {
+			while (input.available() != 0) {
 				VehiclePosition vp = VehiclePosition.parseDelimitedFrom(input);
 				if (vp == null) {
 					break;
@@ -100,6 +100,7 @@ public class GTFSVPToFilePoC {
 			e.printStackTrace();
 			System.out.println("IOException");
 		}
+		System.out.println("readIn.size().equals(2) is " + (readIn.size() == 2));
 		System.out.println("readIn.get(0).equals(vp1) is " + readIn.get(0).equals(vp1));
 		System.out.println("readIn.get(1).equals(vp2) is " + readIn.get(1).equals(vp2));
 	}
