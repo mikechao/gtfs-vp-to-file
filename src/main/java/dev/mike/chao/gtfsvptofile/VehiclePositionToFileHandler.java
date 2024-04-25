@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -116,6 +117,9 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 		try {
 			Files.createFile(outputFilePath);
 			log.info("Create file at {}", outputFilePath.toString());
+		} catch (FileAlreadyExistsException fileExists) {
+			log.warn("File at {} already exist new results will be appended");
+			return outputFilePath.toFile();
 		} catch (IOException e) {
 			log.error("Failed to create file {}", filePath, e);
 			return null;
