@@ -21,9 +21,11 @@ import com.google.transit.realtime.GtfsRealtime.FeedMessage;
 import com.google.transit.realtime.GtfsRealtime.VehiclePosition;
 
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequiredArgsConstructor
 public class VehiclePositionServiceImpl implements VehiclePositionService {
 	
 	private final String feedURL;
@@ -34,12 +36,6 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 	
 	@Autowired
     private ApplicationContext appContext;
-	
-	public VehiclePositionServiceImpl(String feedURL, VehiclePositionHandler vehiclePositionHandler, String routeIds) {
-		this.feedURL = feedURL;
-		this.vpHandler = vehiclePositionHandler;
-		this.interestedRouteIds = routeIds;
-	}
 	
 	@PostConstruct
 	public void init() {

@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -18,9 +17,11 @@ import com.google.transit.realtime.GtfsRealtime.VehiclePosition;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequiredArgsConstructor
 public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 	
 	private final String filePath;
@@ -29,10 +30,6 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 	
 	// where String/key = vp.getVehicle().getId() + vp.getTimestamp()
 	private Set<String> writtenVPKeys = new HashSet<>();
-	
-	public VehiclePositionToFileHandler(String filePath) {
-		this.filePath = filePath;
-	}
 	
 	@PostConstruct
 	public void init() {
