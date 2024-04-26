@@ -1,0 +1,11 @@
+---
+services:
+  gtfs-vp-to-file:
+    image: gtfs-vp-to-file:latest
+    hostname: gtfs-vp-to-file
+    container_name: gtfs-vp-to-file
+    ports:
+      - "8080:8080"
+    environment:
+        GTFS_VP_FEED_URL: "https://api.actransit.org/transit/gtfsrt/vehicles?token=F2BBC66367BB7E3D820D0554B575563A"
+        GTFS_VP_FILE: "/gtfs-vp-out.txt"

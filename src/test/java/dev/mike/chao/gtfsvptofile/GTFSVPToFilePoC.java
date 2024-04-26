@@ -68,7 +68,9 @@ public class GTFSVPToFilePoC {
 			e.printStackTrace();
 			System.out.println("Failed to create temp file");
 		}
-		tempFile.deleteOnExit();
+		if (tempFile != null) {
+			tempFile.deleteOnExit();
+		}
 		try(FileOutputStream output = new FileOutputStream(tempFile, true)) {
 			for (VehiclePosition vp : vps) {
 				vp.writeDelimitedTo(output);
