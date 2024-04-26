@@ -116,9 +116,9 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 		Path outputFilePath = Paths.get(filePath);
 		try {
 			Files.createFile(outputFilePath);
-			log.info("Create file at {}", outputFilePath.toString());
+			log.warn("Create file at {}", outputFilePath.toString());
 		} catch (FileAlreadyExistsException fileExists) {
-			log.warn("File at {} already exist new results will be appended");
+			log.warn("File at {} already exist new results will be appended", filePath);
 			return outputFilePath.toFile();
 		} catch (IOException e) {
 			log.error("Failed to create file {}", filePath, e);
