@@ -1,9 +1,9 @@
 plugins {
 	id 'java'
-	id 'eclipse'
 	id 'project-report'
 	id 'org.springframework.boot' version '3.2.5'
 	id 'io.spring.dependency-management' version '1.1.4'
+	id 'org.graalvm.buildtools.native' version '0.10.1'
 }
 
 group = 'dev.mike.chao'
@@ -11,6 +11,25 @@ version = '0.0.1-SNAPSHOT'
 
 java {
 	sourceCompatibility = '21'
+}
+
+graalvmNative {
+		binaries{
+			all {
+        resources.autodetect()
+			}
+			main {
+				mainClass = 'dev.mike.chao.gtfsvptofile.GtfsVpToFileApplication'
+				buildArgs.add("-march=native")
+				buildArgs.add("--gc=G1")
+			}
+		}
+}
+
+bootJar  {
+	manifest {
+		attributes 'Start-Class': 'dev.mike.chao.gtfsvptofile.GtfsVpToFileApplication'
+	}
 }
 
 configurations {
@@ -30,9 +49,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.mobilitydata:gtfs-realtime-bindings:0.0.8'
+	implementation 'org.reflections:reflections:0.10.2'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	runtimeOnly("ch.qos.logback:logback-classic")
 }
 
 tasks.named('test') {

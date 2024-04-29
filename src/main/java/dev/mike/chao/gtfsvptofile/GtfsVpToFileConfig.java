@@ -3,9 +3,13 @@ package dev.mike.chao.gtfsvptofile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import dev.mike.chao.gtfsvptofile.proto.ProtobufRuntimeHints;
+
 @Configuration
+@ImportRuntimeHints(ProtobufRuntimeHints.class)
 @EnableScheduling
 public class GtfsVpToFileConfig {
 	
@@ -21,13 +25,22 @@ public class GtfsVpToFileConfig {
 	@Value("${gtfs.vp.file:" + TEMP + "}")
 	private String filePath;
 	
+	/*
+	 * Use VehiclePositionServiceImpl instead of the interface VehiclePositionService
+	 * for native image inspection of @PostConstruct methods as the interface contains
+	 * no such info
+	 */
 	@Bean
-	public VehiclePositionService vehiclePositionService() {
+	public VehiclePositionServiceImpl vehiclePositionService() {
 		return new VehiclePositionServiceImpl(gtfsVehiclePositionURL, handler(), gtfsRouteIds);
 	}
 	
+	/*
+	 * Use VehiclePositionToFileHandler instead of the interface VehiclePositionHandler
+	 * for native image
+	 */
 	@Bean
-	public VehiclePositionHandler handler() {
+	public VehiclePositionToFileHandler handler() {
 		return new VehiclePositionToFileHandler(filePath);
 	}
 }
