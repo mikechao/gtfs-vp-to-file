@@ -5,8 +5,10 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -59,33 +61,38 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 		Predicate<VehiclePosition> filterByRouteId = vp -> {
 			return isAllRoutes ? true : routeIds.contains(vp.getTrip().getRouteId());
 		};
-		FeedMessage feedMessage = createFeedMessage();
-		if (feedMessage != null) {
-			List<VehiclePosition> list = feedMessage.getEntityList().stream()
-        		.filter(FeedEntity::hasVehicle)
-        		.map(FeedEntity::getVehicle)
-        		.filter(hasPosition.and(hasTrip).and(filterByRouteId))
-        		.collect(Collectors.toList());
-			vpHandler.handle(list);
-		}
+		Consumer<FeedMessage> hasFeedMessage = fm -> {
+			log.info("FeedMessage entity count {}", fm.getEntityCount());
+			List<VehiclePosition> list = fm.getEntityList().stream()
+				.filter(FeedEntity::hasVehicle)
+				.map(FeedEntity::getVehicle)
+				.filter(hasPosition.and(hasTrip).and(filterByRouteId))
+				.collect(Collectors.toList());
+				log.info("calling VehiclePositionHandler with {} VehiclePositions", list.size());
+				vpHandler.handle(list);
+		};
+		Runnable noFeedMessageAction = () -> log.error("FeedMessage was not created.");
+		Optional<FeedMessage> feedMessage = createFeedMessage();
+		feedMessage.ifPresentOrElse(hasFeedMessage, noFeedMessageAction);
 		log.info("Finished updating vehicle positions");
 	}
 	
-	private FeedMessage createFeedMessage() {
+	private Optional<FeedMessage> createFeedMessage() {
 		FeedMessage feedMessage = null;
-		
-    	try {
-			feedMessage = FeedMessage.parseFrom(createURL().openStream());
-		} catch (IOException e) {
-			log.error("Failed to create FeedMessage", e);
-			int code = SpringApplication.exit(appContext, () -> 1);
-			System.exit(code);
+		Optional<URL> url = createURL();
+		if (url.isPresent()) {
+			try {
+				feedMessage = FeedMessage.parseFrom(url.get().openStream());
+			} catch (IOException e) {
+				log.error("Failed to create FeedMessage", e);
+				int code = SpringApplication.exit(appContext, () -> 1);
+				System.exit(code);
+			}
 		}
-
-		return feedMessage;
+		return Optional.ofNullable(feedMessage);
 	}
 	
-	private URL createURL() {
+	private Optional<URL> createURL() {
 		URL url = null;
 		try {
 			url = UriComponentsBuilder.fromUriString(feedURL).build().toUri().toURL();
@@ -94,7 +101,7 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 			int code = SpringApplication.exit(appContext, () -> 1);
 			System.exit(code);
 		}
-		return url;
+		return Optional.ofNullable(url);
 	}
 
 }

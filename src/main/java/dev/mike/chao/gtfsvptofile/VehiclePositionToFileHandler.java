@@ -34,10 +34,12 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 	
 	@PostConstruct
 	public void init() {
+		log.info("VehiclePositionToFileHandler @PostConstruct/init() start");
 		outputStream = createOutputStream();
 		if (outputStream == null) {
 			canWrite = false;
 		}
+		log.info("VehiclePositionToFileHandler @PostConstruct/init() finish");
 	}
 	
 	@PreDestroy
@@ -57,6 +59,8 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 			log.info("Starting to write VehiclePositions");
 			int count = writeToOutputStream(vehiclePositions);
 			log.info("Finished writing {} VehiclePositions", count);
+		} else {
+			log.info("canWrite is false vehiclePositions.size() {}", vehiclePositions.size());
 		}
 	}
 	
