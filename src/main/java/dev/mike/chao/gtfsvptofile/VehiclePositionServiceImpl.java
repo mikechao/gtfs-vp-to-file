@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -37,7 +38,7 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 	private boolean isAllRoutes = false;
 	
 	@Autowired
-    private ApplicationContext appContext;
+	private ApplicationContext appContext;
 	
 	@PostConstruct
 	public void init() {
@@ -52,6 +53,20 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 	@Scheduled(fixedDelay = 10, initialDelay = 0, timeUnit = TimeUnit.SECONDS)
 	public void update() {
 		log.info("Updating Vehicle Positions");
+
+		Consumer<FeedMessage> hasFeedMessage = fm -> {
+			log.info("FeedMessage entity count {}", fm.getEntityCount());
+			List<VehiclePosition> list = filter(fm.getEntityList().stream());
+				log.info("calling VehiclePositionHandler with {} VehiclePositions", list.size());
+				vpHandler.handle(list);
+		};
+		Runnable noFeedMessageAction = () -> log.error("FeedMessage was not created.");
+		Optional<FeedMessage> feedMessage = createFeedMessage();
+		feedMessage.ifPresentOrElse(hasFeedMessage, noFeedMessageAction);
+		log.info("Finished updating vehicle positions");
+	}
+
+	private List<VehiclePosition> filter(Stream<FeedEntity> feedEntity) {
 		Predicate<VehiclePosition> hasPosition = vp -> {
 			return vp.hasPosition();
 		};
@@ -61,20 +76,11 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 		Predicate<VehiclePosition> filterByRouteId = vp -> {
 			return isAllRoutes ? true : routeIds.contains(vp.getTrip().getRouteId());
 		};
-		Consumer<FeedMessage> hasFeedMessage = fm -> {
-			log.info("FeedMessage entity count {}", fm.getEntityCount());
-			List<VehiclePosition> list = fm.getEntityList().stream()
-				.filter(FeedEntity::hasVehicle)
-				.map(FeedEntity::getVehicle)
-				.filter(hasPosition.and(hasTrip).and(filterByRouteId))
-				.collect(Collectors.toList());
-				log.info("calling VehiclePositionHandler with {} VehiclePositions", list.size());
-				vpHandler.handle(list);
-		};
-		Runnable noFeedMessageAction = () -> log.error("FeedMessage was not created.");
-		Optional<FeedMessage> feedMessage = createFeedMessage();
-		feedMessage.ifPresentOrElse(hasFeedMessage, noFeedMessageAction);
-		log.info("Finished updating vehicle positions");
+		return feedEntity
+		.filter(FeedEntity::hasVehicle)
+		.map(FeedEntity::getVehicle)
+		.filter(hasPosition.and(hasTrip).and(filterByRouteId))
+		.collect(Collectors.toList());
 	}
 	
 	private Optional<FeedMessage> createFeedMessage() {
