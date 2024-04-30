@@ -21,14 +21,14 @@ graalvmNative {
 			main {
 				mainClass = 'dev.mike.chao.gtfsvptofile.GtfsVpToFileApplication'
 				buildArgs.add("-march=native")
-				buildArgs.add("--gc=G1")
 			}
 		}
 }
 
 tasks.named("bootBuildImage") {
 	environment["BP_NATIVE_IMAGE"] ="true"
-	environment["BP_NATIVE_IMAGE_BUILD_ARGUMENTS"] = ""
+	environment["BP_JVM_VERSION"] = "21"
+	environment["BP_NATIVE_IMAGE_BUILD_ARGUMENTS"] = "--no-fallback -o gtfs-vp-to-file -R:MaxHeapSize=256m"
 	imageName = "docker.io/library/${project.name}:native.${project.version}"
 }
 
