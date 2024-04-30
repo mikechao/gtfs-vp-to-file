@@ -14,8 +14,12 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.google.transit.realtime.GtfsRealtime.VehiclePosition;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -28,10 +32,18 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 	private final String filePath;
 	private FileOutputStream outputStream;
 	private boolean canWrite = true;
+	private Counter writeCounter;
 	
 	// where String/key = vp.getVehicle().getId() + vp.getTimestamp()
 	private Set<String> writtenVPKeys = new HashSet<>();
 	
+	@Autowired
+	public void setMeterRegistry(MeterRegistry registry) {
+		writeCounter = Counter.builder("vehicle.position.writes")
+			.description("Counts the number of VehiclePosition objects written")
+			.register(registry);
+	}
+
 	@PostConstruct
 	public void init() {
 		log.info("VehiclePositionToFileHandler @PostConstruct/init() start");
@@ -58,6 +70,7 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 		if (canWrite) {
 			log.info("Starting to write VehiclePositions");
 			int count = writeToOutputStream(vehiclePositions);
+			writeCounter.increment(count);
 			log.info("Finished writing {} VehiclePositions", count);
 		} else {
 			log.info("canWrite is false vehiclePositions.size() {}", vehiclePositions.size());
