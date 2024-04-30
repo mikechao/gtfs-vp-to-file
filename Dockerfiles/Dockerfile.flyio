@@ -1,0 +1,13 @@
+#This docker file is used with 'fly deploy --local-only' see fly.toml is root dir
+#It is expected that ./gradlew bootBuildImage --builder paketobuildpacks/builder-jammy-base:latest
+#Is executed before fly deploy --local-only
+#The default builder builder-jammy-tiny does NOT include mkdir,chown...
+FROM gtfs-vp-to-file:native.0.0.1-SNAPSHOT
+
+USER root
+RUN mkdir /data
+RUN chown -R cnb:cnb /data
+USER cnb
+
+ENV PORT 8080
+EXPOSE 8080
