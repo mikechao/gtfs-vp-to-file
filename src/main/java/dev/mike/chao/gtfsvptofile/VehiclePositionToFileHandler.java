@@ -4,10 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,32 +26,45 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class VehiclePositionToFileHandler implements VehiclePositionHandler {
-	
-	private final String filePath;
+
+	private final FileHelperImpl fileHelper;
 	private FileOutputStream outputStream;
+	private Path outputFilePath;
 	private boolean canWrite = true;
 	private Counter writeCounter;
-	
+	private Counter fileSizeCounter;
+	private long filesize = 0;
+
 	// where String/key = vp.getVehicle().getId() + vp.getTimestamp()
 	private Set<String> writtenVPKeys = new HashSet<>();
-	
+
 	@Autowired
 	public void setMeterRegistry(MeterRegistry registry) {
 		writeCounter = Counter.builder("vehicle.position.writes")
-			.description("Counts the number of VehiclePosition objects written")
-			.register(registry);
+				.description("Counts the number of VehiclePosition objects written")
+				.register(registry);
+
+		fileSizeCounter = Counter.builder("vehicle.position.file.size")
+				.description("The size of the output file")
+				.baseUnit("bytes")
+				.register(registry);
 	}
 
 	@PostConstruct
 	public void init() {
 		log.info("VehiclePositionToFileHandler @PostConstruct/init() start");
-		outputStream = createOutputStream();
-		if (outputStream == null) {
+		if (fileHelper.isFileExist()) {
+			outputFilePath = fileHelper.getPath();
+			outputStream = createOutputStream(fileHelper.getFile());
+			if (outputStream == null) {
+				canWrite = false;
+			}
+		} else {
 			canWrite = false;
 		}
 		log.info("VehiclePositionToFileHandler @PostConstruct/init() finish");
 	}
-	
+
 	@PreDestroy
 	public void destroy() {
 		if (outputStream != null) {
@@ -64,7 +75,7 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 			}
 		}
 	}
-	
+
 	@Override
 	public void handle(Collection<VehiclePosition> vehiclePositions) {
 		if (canWrite) {
@@ -76,7 +87,7 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 			log.info("canWrite is false vehiclePositions.size() {}", vehiclePositions.size());
 		}
 	}
-	
+
 	private int writeToOutputStream(Collection<VehiclePosition> vps) {
 		int writeCount = 0;
 		Predicate<VehiclePosition> filterByVPKey = vp -> {
@@ -96,52 +107,39 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 				log.error("Failed to write VehiclePosition {}", writeMe, e);
 				break;
 			}
+			updateFileSizeCounter();
 		}
 		return writeCount;
 	}
-	
+
 	private String getKey(VehiclePosition vp) {
 		return vp.getVehicle().getId() + vp.getTimestamp();
 	}
-	
-	private FileOutputStream createOutputStream() {
-		File file = filePath.equals(GtfsVpToFileConfig.TEMP) ? createTempFile() : createFile();
+
+	private void updateFileSizeCounter() {
+		try {
+			Long size = Long.valueOf(Files.size(outputFilePath));
+			double increment = size - filesize;
+			fileSizeCounter.increment(increment);
+			filesize = size;
+		} catch (SecurityException se) {
+			log.error("Failed to update file size counter", se);
+		} catch (IOException e) {
+			log.error("Failed to update file size counter", e);
+		}
+	}
+
+	private FileOutputStream createOutputStream(File file) {
 		if (file != null) {
 			FileOutputStream outputStream = null;
 			try {
 				outputStream = new FileOutputStream(file, true);
 			} catch (FileNotFoundException e) {
-				log.error("Failed to create FileOutputStream. FilePath {}", filePath, e);
+				log.error("Failed to create FileOutputStream. FilePath {}", file, e);
 			}
 			return outputStream;
 		}
 		return null;
-	}
-	
-	private File createTempFile() {
-		File temp = null;
-		try {
-			temp = File.createTempFile("vps", ".txt");
-			log.info("Create file at {}", temp.getAbsolutePath());
-		} catch (IOException e) {
-			log.error("Failed to create temp file", e);
-		}
-		return temp;
-	}
-	
-	private File createFile() {
-		Path outputFilePath = Paths.get(filePath);
-		try {
-			Files.createFile(outputFilePath);
-			log.warn("Create file at {}", outputFilePath.toString());
-		} catch (FileAlreadyExistsException fileExists) {
-			log.warn("File at {} already exist new results will be appended", filePath);
-			return outputFilePath.toFile();
-		} catch (IOException e) {
-			log.error("Failed to create file {}", filePath, e);
-			return null;
-		}
-		return outputFilePath.toFile();
 	}
 
 }
