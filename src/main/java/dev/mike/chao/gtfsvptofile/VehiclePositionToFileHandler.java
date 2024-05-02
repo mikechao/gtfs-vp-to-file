@@ -33,7 +33,7 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 	private boolean canWrite = true;
 	private Counter writeCounter;
 	private Counter fileSizeCounter;
-	private long filesize = 0;
+	private long fileSize = 0;
 
 	// where String/key = vp.getVehicle().getId() + vp.getTimestamp()
 	private Set<String> writtenVPKeys = new HashSet<>();
@@ -119,9 +119,9 @@ public class VehiclePositionToFileHandler implements VehiclePositionHandler {
 	private void updateFileSizeCounter() {
 		try {
 			Long size = Long.valueOf(Files.size(outputFilePath));
-			double increment = size - filesize;
+			double increment = size - fileSize;
 			fileSizeCounter.increment(increment);
-			filesize = size;
+			fileSize = size;
 		} catch (SecurityException se) {
 			log.error("Failed to update file size counter", se);
 		} catch (IOException e) {
