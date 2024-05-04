@@ -28,7 +28,7 @@ graalvmNative {
 tasks.named("bootBuildImage") {
 	environment["BP_NATIVE_IMAGE"] ="true"
 	environment["BP_JVM_VERSION"] = "21"
-	environment["BP_NATIVE_IMAGE_BUILD_ARGUMENTS"] = "--no-fallback -o gtfs-vp-to-file -R:MaxHeapSize=256m"
+	environment["BP_NATIVE_IMAGE_BUILD_ARGUMENTS"] = "--no-fallback -o gtfs-vp-to-file -R:MaxHeapSize=192m"
 	imageName = "docker.io/library/${project.name}:native.${project.version}"
 }
 
