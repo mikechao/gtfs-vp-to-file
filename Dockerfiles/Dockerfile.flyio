@@ -1,8 +1,10 @@
-#This docker file is used with 'fly deploy --local-only' see fly.toml is root dir
-#It is expected that ./gradlew bootBuildImage --builder paketobuildpacks/builder-jammy-base:latest
-#Is executed before fly deploy --local-only
-#The default builder builder-jammy-tiny does NOT include mkdir,chown...
+FROM busybox:1.36.1-uclibc as busybox
+
 FROM gtfs-vp-to-file:native.0.0.1-SNAPSHOT
+
+COPY --from=busybox /bin/sh /bin/sh
+COPY --from=busybox /bin/mkdir /bin/mkdir
+COPY --from=busybox /bin/chown /bin/chown
 
 USER root
 RUN mkdir /data
