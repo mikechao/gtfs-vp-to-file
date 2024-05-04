@@ -52,7 +52,12 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation ('org.springframework.boot:spring-boot-starter-web') {
+  	exclude group: 'org.apache.tomcat.embed', module: 'tomcat-embed-core'
+  	exclude group: 'org.apache.tomcat.embed', module: 'tomcat-embed-websocket'
+	}
+	String tomcatVersion = dependencyManagement.importedProperties['tomcat.version']
+	implementation "org.apache.tomcat.experimental:tomcat-embed-programmatic:$tomcatVersion"
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'org.mobilitydata:gtfs-realtime-bindings:0.0.8'
