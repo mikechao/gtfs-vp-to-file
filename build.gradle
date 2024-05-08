@@ -23,6 +23,7 @@ jacocoTestReport {
 }
 
 graalvmNative {
+		testSupport = false
 		binaries{
 			all {
         resources.autodetect()
@@ -37,7 +38,7 @@ graalvmNative {
 tasks.named("bootBuildImage") {
 	environment["BP_NATIVE_IMAGE"] ="true"
 	environment["BP_JVM_VERSION"] = "21"
-	environment["BP_NATIVE_IMAGE_BUILD_ARGUMENTS"] = "--no-fallback -o gtfs-vp-to-file -R:MaxHeapSize=192m -R:MinHeapSize=128m"
+	environment["BP_NATIVE_IMAGE_BUILD_ARGUMENTS"] = "--no-fallback -o gtfs-vp-to-file -R:MaxHeapSize=128m -R:MinHeapSize=32m"
 	imageName = "docker.io/library/${project.name}:native.${project.version}"
 }
 
