@@ -51,7 +51,7 @@ public class FileHelperImpl implements FileHelper {
       if (filePath.equals(GtfsVpToFileConfig.TEMP)) {
         p = Files.createTempFile("vps", ".txt");
       } else {
-        p = Paths.get(filePath);
+        p = Path.of(filePath);
         Files.createFile(p);
       }
     } catch (FileAlreadyExistsException fe) {
