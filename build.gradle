@@ -1,6 +1,7 @@
 plugins {
 	id 'java'
 	id 'project-report'
+	id 'jacoco'
 	id 'org.springframework.boot' version '3.2.5'
 	id 'io.spring.dependency-management' version '1.1.4'
 	id 'org.graalvm.buildtools.native' version '0.10.1'
@@ -11,6 +12,14 @@ version = '0.0.1-SNAPSHOT'
 
 java {
 	sourceCompatibility = '21'
+}
+
+test {
+    finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
 }
 
 graalvmNative {
@@ -28,7 +37,7 @@ graalvmNative {
 tasks.named("bootBuildImage") {
 	environment["BP_NATIVE_IMAGE"] ="true"
 	environment["BP_JVM_VERSION"] = "21"
-	environment["BP_NATIVE_IMAGE_BUILD_ARGUMENTS"] = "--no-fallback -o gtfs-vp-to-file -R:MaxHeapSize=192m"
+	environment["BP_NATIVE_IMAGE_BUILD_ARGUMENTS"] = "--no-fallback -o gtfs-vp-to-file -R:MaxHeapSize=192m -R:MinHeapSize=128m"
 	imageName = "docker.io/library/${project.name}:native.${project.version}"
 }
 
@@ -65,6 +74,7 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation "org.mockito:mockito-core:3.+"
 	runtimeOnly("ch.qos.logback:logback-classic")
 }
 
