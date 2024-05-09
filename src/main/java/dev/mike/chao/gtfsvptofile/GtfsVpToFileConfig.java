@@ -1,7 +1,9 @@
 package dev.mike.chao.gtfsvptofile;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportRuntimeHints;
@@ -30,6 +32,9 @@ public class GtfsVpToFileConfig {
 	@Value("${gtfs.vp.deployed.to}")
 	private String appDeployedTo;
 
+	@Autowired
+	private ApplicationContext appContext;
+
 	/*
 	 * Use VehiclePositionServiceImpl instead of the interface
 	 * VehiclePositionService
@@ -38,8 +43,8 @@ public class GtfsVpToFileConfig {
 	 * no such info
 	 */
 	@Bean
-	public VehiclePositionServiceImpl vehiclePositionService() {
-		return new VehiclePositionServiceImpl(gtfsVehiclePositionURL, handler(), gtfsRouteIds);
+	VehiclePositionServiceImpl vehiclePositionService() {
+		return new VehiclePositionServiceImpl(gtfsVehiclePositionURL, handler(), springApplicationExit(), gtfsRouteIds);
 	}
 
 	/*
@@ -48,12 +53,17 @@ public class GtfsVpToFileConfig {
 	 * for native image
 	 */
 	@Bean
-	public VehiclePositionToFileHandler handler() {
+	VehiclePositionToFileHandler handler() {
 		return new VehiclePositionToFileHandler(fileHelperImpl());
 	}
 
 	@Bean
-	public FileHelperImpl fileHelperImpl() {
+	SpringApplicationExit springApplicationExit() {
+		return new SpringApplicationExit(appContext);
+	}
+
+	@Bean
+	FileHelperImpl fileHelperImpl() {
 		return new FileHelperImpl(filePath);
 	}
 

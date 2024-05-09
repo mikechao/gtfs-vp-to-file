@@ -13,9 +13,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -30,16 +27,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class VehiclePositionServiceImpl implements VehiclePositionService {
-	
+
 	private final String feedURL;
 	private final VehiclePositionHandler vpHandler;
+	private final ApplicationExit applicationExit;
 	private final String interestedRouteIds;
 	private Set<String> routeIds = new HashSet<>();
 	private boolean isAllRoutes = false;
-	
-	@Autowired
-	private ApplicationContext appContext;
-	
+
 	@PostConstruct
 	public void init() {
 		if (interestedRouteIds.equals(GtfsVpToFileConfig.ALL)) {
@@ -57,8 +52,8 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 		Consumer<FeedMessage> hasFeedMessage = fm -> {
 			log.info("FeedMessage entity count {}", fm.getEntityCount());
 			List<VehiclePosition> list = filter(fm.getEntityList().stream());
-				log.info("calling VehiclePositionHandler with {} VehiclePositions", list.size());
-				vpHandler.handle(list);
+			log.info("calling VehiclePositionHandler with {} VehiclePositions", list.size());
+			vpHandler.handle(list);
 		};
 		Runnable noFeedMessageAction = () -> log.error("FeedMessage was not created.");
 		Optional<FeedMessage> feedMessage = createFeedMessage();
@@ -77,12 +72,12 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 			return isAllRoutes ? true : routeIds.contains(vp.getTrip().getRouteId());
 		};
 		return feedEntity
-		.filter(FeedEntity::hasVehicle)
-		.map(FeedEntity::getVehicle)
-		.filter(hasPosition.and(hasTrip).and(filterByRouteId))
-		.collect(Collectors.toList());
+				.filter(FeedEntity::hasVehicle)
+				.map(FeedEntity::getVehicle)
+				.filter(hasPosition.and(hasTrip).and(filterByRouteId))
+				.collect(Collectors.toList());
 	}
-	
+
 	private Optional<FeedMessage> createFeedMessage() {
 		FeedMessage feedMessage = null;
 		Optional<URL> url = createURL();
@@ -91,21 +86,19 @@ public class VehiclePositionServiceImpl implements VehiclePositionService {
 				feedMessage = FeedMessage.parseFrom(url.get().openStream());
 			} catch (IOException e) {
 				log.error("Failed to create FeedMessage", e);
-				int code = SpringApplication.exit(appContext, () -> 1);
-				System.exit(code);
+				applicationExit.exit(1);
 			}
 		}
 		return Optional.ofNullable(feedMessage);
 	}
-	
+
 	private Optional<URL> createURL() {
 		URL url = null;
 		try {
 			url = UriComponentsBuilder.fromUriString(feedURL).build().toUri().toURL();
 		} catch (Exception e) {
 			log.error("Failed to create url from {}", feedURL, e);
-			int code = SpringApplication.exit(appContext, () -> 1);
-			System.exit(code);
+			applicationExit.exit(1);
 		}
 		return Optional.ofNullable(url);
 	}
