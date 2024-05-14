@@ -1,16 +1,4 @@
-- [About](#about)
-  - [Environment Properties](#environment-properties)
-  - [Building the project as GraalVM Native Image](#building-the-project-as-graalvm-native-image)
-    - [Prerequisites](#prerequisites)
-    - [Building Docker image](#building-docker-image)
-    - [Building the native image executable](#building-the-native-image-executable)
-      - [Native image build status 137 error](#native-image-build-status-137-error)
-- [fly.io](#flyio)
-  - [Deploying to fly.io](#deploying-to-flyio)
-    - [Preparing the fly.toml file](#preparing-the-flytoml-file)
-    - [Deploying or Redeploying](#deploying-or-redeploying)
-
-# About
+## About
 
 This is a Spring Boot Native Image app that connects to a [General Transit Feed Specification](https://gtfs.org/) and writes the [VehiclePosition](https://gtfs.org/realtime/feed-entities/vehicle-positions/) data from the feed to a file. Specifically it connects to a [GTFS Realtime](https://gtfs.org/realtime/) 
 
