@@ -1,3 +1,14 @@
+- [About](#about)
+  - [Environment Properties](#environment-properties)
+  - [Building the project as GraalVM Native Image](#building-the-project-as-graalvm-native-image)
+    - [Prerequisites](#prerequisites)
+    - [Building Docker image](#building-docker-image)
+    - [Building the native image executable](#building-the-native-image-executable)
+      - [Native image build status 137 error](#native-image-build-status-137-error)
+- [fly.io](#flyio)
+  - [Deploying to fly.io](#deploying-to-flyio)
+    - [Preparing the fly.toml file](#preparing-the-flytoml-file)
+    - [Deploying or Redeploying](#deploying-or-redeploying)
 
 # About
 
@@ -67,49 +78,72 @@ To build a Docker image that is not a "distroless" Docker image we have to speci
 
 You might encounter the error running build exit status 137. This usually means Docker ran out memory when trying to build the application.
 
-On Windows with WSL2 installed create `%UserProfile%\.wslconfig` and add the following
+On Windows with WSL2 installed create `%UserProfile%\.wslconfig` and add the following to increase the memory allocated.
 ```
 [wsl2]
 memory=12GB
 ```
 
-## Redeploying to fly.io
+# fly.io
 
 fly.io is an app hosting platform that can run Docker images for us in what they call "micro-vms". [fly.io](https://fly.io/)
 
-Once the 'fly.toml' file has been created and the app has been deployed. Redeploying it using the following command.
+They have a $5 monthly hobby plan. Pricing can be found [here](https://fly.io/docs/about/pricing/). The plan includes some [free allowances](https://fly.io/docs/about/pricing/#free-allowances). As long as the application stays within the free allowances you will not be billed.
 
-Build the Docker image
-```
-./gradlew bootBuildImage
-```
-Output should be something like, note the docker image id
-```
-    [creator]     Saving docker.io/library/gtfs-vp-to-file:native.0.0.1-SNAPSHOT...
-    [creator]     *** Images (088a9bce3713):
-    [creator]           docker.io/library/gtfs-vp-to-file:native.0.0.1-SNAPSHOT
-    [creator]     Reusing cache layer 'paketo-buildpacks/bellsoft-liberica:native-image-svm'
-    [creator]     Reusing cache layer 'paketo-buildpacks/syft:syft'
-    [creator]     Adding cache layer 'paketo-buildpacks/native-image:native-image'
-    [creator]     Reusing cache layer 'buildpacksio/lifecycle:cache.sbom'
+## Deploying to fly.io
 
-Successfully built image 'docker.io/library/gtfs-vp-to-file:native.0.0.1-SNAPSHOT'
+### Preparing the fly.toml file
+1. Sign up for their Hobby plan. 
+2. Install their CLI tool
+   ```
+   curl -L https://fly.io/install.sh | sh
+   ```
+3. Generate the 'fly.toml' configuration file used by fly.io
+   ```
+   fly launch --no-deploy
+   ```
+   The settings can be tweaked by answers Yes and a browser will be launched. If the browser fails to open, just copy the url.
+4. Edit the fly.toml to add a mounts section so that we can have persistent storage.
+   ```
+   [mounts]
+      source="myapp_data"
+      destination="/data"
+   ```
+5. Edit the fly.toml to add a env section to add our environment variables
+   ```
+   [env]
+      GTFS_VP_FEED_URL = "https://api.actransit.org/transit/gtfsrt/vehicles?token=api_token_here"
+      GTFS_VP_FILE = "/data/gtfs-vp-out-20240514.txt"
+      GTFS_VP_ROUTE_IDS = "51A,51B,6,7,10,F"
+      SERVER_HOST = "0.0.0.0"
+      LOG_LEVEL_APP = "WARN"
+      LOG_PATH = "/data/"
+   ```
+6. Add a metrics section so fly.io knows where to get metrics data
+   ```
+   [metrics]
+      port = 8080
+   ```
+7. Make sure to set auto_stop_machines to false in the http_service section to stop fly.io's proxy from stopping our application once it detects there is no activity.
+   ```
+   [http_service]
+      nternal_port = 8080
+      force_https = true
+      auto_stop_machines = false
+   ```
 
+8. Add a build section to point to `./Dockerfiles/Dockerfile.fly.io'
+   ```
+   [build]
+      dockerfile = "./Dockerfiles/Dockerfile.flyio"
+   ```
 
-BUILD SUCCESSFUL in 5m 15s
-```
-
-Tag the locally built Docker image
-```
-docker tag $dockerId registry.fly.io/gtfs-vp-to-file
-```
-
-Push the tagged Docker image to fly.io
-```
-docker push registry.fly.io/gtfs-vp-to-file:latest
-```
-
-Deploy on fly.io using the pushed Docker Image
-```
-flyctl deploy -i registry.fly.io/gtfs-vp-to-file:latest -a gtfs-vp-to-file
-```
+### Deploying or Redeploying
+1. Build the Docker image
+   ```
+   ./gradlew bootBuildImage
+   ```
+2. Deploy to fly.io 
+   ```
+   fly deploy --local-only
+   ```
