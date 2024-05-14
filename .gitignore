@@ -44,3 +44,5 @@ gtfs-vp-out.txt
 gtfs-vp-to-file.log
 vpOutTest.text
 output/
+deployedOutput/
+fly.toml
